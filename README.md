@@ -11,6 +11,8 @@ metrics for dashboards and AI agents.
 
 Runs locally on **DuckDB** with zero setup and on **Snowflake** with the same code
 (`profiles.yml` has both targets; warehouse-specific SQL goes through dispatched macros).
+Verified end to end on a Snowflake account (key-pair auth, XSMALL warehouse): raw load,
+`dbt build`, incremental re-run and reconciliation test all pass.
 
 ## What it shows
 
