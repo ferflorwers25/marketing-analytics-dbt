@@ -1,9 +1,9 @@
 """Load the simulated raw CSVs into Snowflake (schema RAW) so the same dbt project runs there.
 
 Prerequisites: a Snowflake account (the 30-day trial works), `pip install dbt-snowflake
-snowflake-connector-python[pandas]`, and these environment variables:
-SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE,
-SNOWFLAKE_DATABASE.
+snowflake-connector-python[pandas]`, a key pair registered on the user (see README) and these
+environment variables: SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PRIVATE_KEY_PATH, and
+optionally SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE, SNOWFLAKE_DATABASE.
 
 Usage:
     python scripts/generate_data.py --csv-only
@@ -24,9 +24,9 @@ TIMESTAMPS = {"_extracted_at", "updated_at"}
 con = snowflake.connector.connect(
     account=os.environ["SNOWFLAKE_ACCOUNT"],
     user=os.environ["SNOWFLAKE_USER"],
-    password=os.environ["SNOWFLAKE_PASSWORD"],
-    role=os.environ.get("SNOWFLAKE_ROLE", "ACCOUNTADMIN"),
-    warehouse=os.environ.get("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH"),
+    private_key_file=os.path.expanduser(os.environ["SNOWFLAKE_PRIVATE_KEY_PATH"]),
+    role=os.environ.get("SNOWFLAKE_ROLE", "TRANSFORMER"),
+    warehouse=os.environ.get("SNOWFLAKE_WAREHOUSE", "TRANSFORMING"),
     database=os.environ.get("SNOWFLAKE_DATABASE", "MARKETING"),
 )
 con.cursor().execute("create schema if not exists RAW")

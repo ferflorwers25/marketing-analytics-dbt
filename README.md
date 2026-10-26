@@ -73,13 +73,22 @@ dbt docs generate && dbt docs serve
 
 ### On Snowflake
 
-```bash
-pip install dbt-snowflake "snowflake-connector-python[pandas]"
-export SNOWFLAKE_ACCOUNT=... SNOWFLAKE_USER=... SNOWFLAKE_PASSWORD=... SNOWFLAKE_WAREHOUSE=COMPUTE_WH SNOWFLAKE_DATABASE=MARKETING SNOWFLAKE_ROLE=ACCOUNTADMIN
-python scripts/generate_data.py --csv-only
-python scripts/load_to_snowflake.py
-DBT_TARGET=snowflake dbt build
-```
+Authentication uses a key pair, so no password is stored in files or environment variables.
+
+1. In a Snowsight worksheet, run [`scripts/snowflake_setup.sql`](scripts/snowflake_setup.sql)
+   (XSMALL auto-suspending warehouse, `MARKETING` database, least-privilege `TRANSFORMER` role).
+2. Create a key pair and register the public key on your user:
+   ```bash
+   mkdir -p ~/.snowflake && cd ~/.snowflake
+   openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt
+   openssl rsa -in rsa_key.p8 -pubout -out rsa_key.pub
+   # in Snowsight: alter user <user> set rsa_public_key = '<rsa_key.pub without BEGIN/END lines>';
+   ```
+3. Run everything (creates a Python 3.12 env, loads the raw data, runs `dbt build`):
+   ```bash
+   export SNOWFLAKE_ACCOUNT=<orgname-accountname> SNOWFLAKE_USER=<user> SNOWFLAKE_PRIVATE_KEY_PATH=~/.snowflake/rsa_key.p8
+   ./scripts/run_on_snowflake.sh
+   ```
 
 ## CI
 
