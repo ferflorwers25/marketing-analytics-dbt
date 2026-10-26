@@ -1,0 +1,7 @@
+version: 2
+models:
+  - name: lumen__non_brand_performance_weekly
+    description: Lumen Skincare only. Weekly non-brand ROAS by platform (Brand Search excluded by client rule).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [week_start, platform]}

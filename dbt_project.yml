@@ -1,0 +1,45 @@
+name: marketing_analytics
+version: "1.0.0"
+config-version: 2
+profile: marketing_analytics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Platforms re-send recent days with late conversions; the incremental fact re-processes this window.
+  restatement_lookback_days: 7
+
+models:
+  marketing_analytics:
+    +persist_docs: {relation: true, columns: true}
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: ephemeral
+    marts:
+      +schema: marts
+      +materialized: table
+    clients:
+      # Client-specific logic lives here, on top of the shared core marts. The core is never forked.
+      +schema: clients
+      +materialized: view
+    semantic:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  marketing_analytics:
+    +schema: reference
+
+snapshots:
+  marketing_analytics:
+    +schema: snapshots

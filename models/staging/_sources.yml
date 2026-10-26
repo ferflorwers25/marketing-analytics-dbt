@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw extracts as the connectors land them (SIMULATED data, see scripts/generate_data.py).
+    schema: raw
+    config:
+      loaded_at_field: _extracted_at
+      freshness:
+        warn_after: {count: 1, period: day}
+        error_after: {count: 3, period: day}
+    tables:
+      - name: meta_ads_insights
+        description: Meta Ads insights, one row per campaign-day per extraction. Recent days are re-sent (restatements).
+      - name: google_ads_campaign_stats
+        description: Google Ads campaign stats. Cost comes in micros.
+      - name: tiktok_ads_report
+        description: TikTok Ads report. Dates arrive as timestamps; some advertisers are billed in MXN.
+      - name: shopify_orders
+        description: Shopify orders with the landing URL that carries the UTM parameters.
+        config:
+          loaded_at_field: "cast(created_at as timestamp)"
+      - name: campaign_settings
+        description: Current settings of each campaign (name, status, budget). Source for the SCD2 snapshot.
+        config:
+          freshness: null

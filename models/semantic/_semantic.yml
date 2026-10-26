@@ -1,0 +1,65 @@
+version: 2
+
+# Semantic layer: one shared definition of each metric, so a dashboard, an analyst and an
+# AI agent writing SQL all get the same ROAS for the same question.
+semantic_models:
+  - name: channel_performance
+    description: Daily channel performance per client and platform.
+    model: ref('mart_channel_performance_daily')
+    defaults:
+      agg_time_dimension: date_day
+    entities:
+      - name: channel_day
+        type: primary
+        expr: channel_day_key
+      - name: client
+        type: foreign
+        expr: client_id
+    dimensions:
+      - name: date_day
+        type: time
+        type_params:
+          time_granularity: day
+      - name: platform
+        type: categorical
+    measures:
+      - name: spend_usd
+        agg: sum
+      - name: attributed_revenue_usd
+        agg: sum
+      - name: platform_conversion_value_usd
+        agg: sum
+      - name: attributed_orders
+        agg: sum
+      - name: platform_conversions
+        agg: sum
+
+metrics:
+  - name: spend
+    label: Spend (USD)
+    type: simple
+    type_params:
+      measure: spend_usd
+  - name: attributed_revenue
+    label: Store-attributed revenue (USD)
+    type: simple
+    type_params:
+      measure: attributed_revenue_usd
+  - name: platform_conversion_value
+    label: Platform-reported conversion value (USD)
+    type: simple
+    type_params:
+      measure: platform_conversion_value_usd
+  - name: roas
+    label: ROAS (store-attributed)
+    description: Store-attributed revenue divided by spend. The ROAS we report to clients.
+    type: ratio
+    type_params:
+      numerator: attributed_revenue
+      denominator: spend
+  - name: platform_roas
+    label: ROAS (platform-reported)
+    type: ratio
+    type_params:
+      numerator: platform_conversion_value
+      denominator: spend

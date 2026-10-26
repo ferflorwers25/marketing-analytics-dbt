@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: stg_meta__campaign_daily
+    description: Meta campaign-day performance, latest extraction only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [account_id, campaign_id, date_day]}
+    columns:
+      - name: spend
+        data_tests: [not_null, not_negative]
+      - name: platform_conversion_value
+        description: Coalesces the deprecated action_values_purchase with the new purchase_value field.
+        data_tests: [not_null]
+
+  - name: stg_google_ads__campaign_daily
+    description: Google Ads campaign-day performance, latest extraction only. Spend converted from micros.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [account_id, campaign_id, date_day]}
+    columns:
+      - name: spend
+        data_tests: [not_null, not_negative]
+
+  - name: stg_tiktok__campaign_daily
+    description: TikTok campaign-day performance in the billing currency, latest extraction only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: {combination_of_columns: [account_id, campaign_id, date_day]}
+    columns:
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments: {values: [USD, MXN]}
+      - name: spend
+        data_tests: [not_null, not_negative]
+
+  - name: stg_shopify__orders
+    description: Shopify orders with UTM parameters parsed from the landing URL.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: financial_status
+        data_tests:
+          - accepted_values:
+              arguments: {values: [paid, refunded, pending]}
+
+unit_tests:
+  - name: test_utm_parsing_handles_messy_urls
+    description: UTM values are parsed, lower-cased where needed, and missing parameters become null.
+    model: stg_shopify__orders
+    given:
+      - input: source('raw', 'shopify_orders')
+        rows:
+          - {order_id: 1, shop_domain: a.myshopify.com, created_at: "2026-10-01 10:00:00", total_price: 10, currency: usd, financial_status: PAID,
+             landing_site: "https://a.myshopify.com/p?utm_source=IG&utm_medium=paid&utm_campaign=238000001"}
+          - {order_id: 2, shop_domain: a.myshopify.com, created_at: "2026-10-01 11:00:00", total_price: 20, currency: USD, financial_status: refunded,
+             landing_site: "https://a.myshopify.com/"}
+          - {order_id: 3, shop_domain: a.myshopify.com, created_at: "2026-10-01 12:00:00", total_price: 30, currency: USD, financial_status: paid,
+             landing_site: "https://a.myshopify.com/p?utm_campaign=19000005&utm_source=google#reviews"}
+    expect:
+      rows:
+        - {order_id: "1", utm_source: ig, utm_medium: paid, utm_campaign: "238000001", is_paid: true, currency: USD}
+        - {order_id: "2", utm_source: null, utm_medium: null, utm_campaign: null, is_paid: false, currency: USD}
+        - {order_id: "3", utm_source: google, utm_medium: null, utm_campaign: "19000005", is_paid: true, currency: USD}

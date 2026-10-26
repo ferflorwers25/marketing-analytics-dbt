@@ -1,0 +1,8 @@
+snapshots:
+  - name: snap_campaign_settings
+    relation: source('raw', 'campaign_settings')
+    description: Type 2 history of campaign names, status and budget (who changed what, and when).
+    config:
+      unique_key: [platform, campaign_id]
+      strategy: timestamp
+      updated_at: updated_at

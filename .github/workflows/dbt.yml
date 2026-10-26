@@ -1,0 +1,37 @@
+name: dbt build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Generate simulated raw data
+        run: python scripts/generate_data.py
+      - name: dbt deps
+        run: dbt deps
+      - name: Source freshness
+        run: dbt source freshness
+      - name: Build (seeds, snapshots, models, unit + data tests)
+        run: dbt build
+      - name: Incremental re-run with restatement window, then reconcile
+        run: |
+          dbt run -s fct_ad_performance_daily
+          dbt test -s fct_ad_performance_daily assert_spend_reconciles_to_platforms
+      - name: SCD2 snapshot picks up a campaign edit
+        run: |
+          python scripts/simulate_campaign_change.py
+          dbt snapshot
+      - name: Docs
+        run: dbt docs generate

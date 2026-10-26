@@ -1,0 +1,19 @@
+version: 2
+exposures:
+  - name: client_performance_dashboard
+    label: Client performance dashboard
+    type: dashboard
+    maturity: medium
+    description: Weekly dashboard the account teams share with each client (spend, ROAS, conversion gap).
+    owner: {name: Fernando Flores, email: ferflore05@gmail.com}
+    depends_on:
+      - ref('mart_channel_performance_daily')
+      - ref('dim_campaigns')
+  - name: ai_analyst_agent
+    label: AI analyst agent
+    type: application
+    maturity: low
+    description: LLM agent that answers account-team questions. It may only query the semantic layer metrics, never raw tables.
+    owner: {name: Fernando Flores, email: ferflore05@gmail.com}
+    depends_on:
+      - ref('mart_channel_performance_daily')

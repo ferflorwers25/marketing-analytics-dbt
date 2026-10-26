@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: dim_clients
+    description: One row per client.
+    columns:
+      - name: client_id
+        data_tests: [unique, not_null]
+
+  - name: dim_campaigns
+    description: One row per campaign with its latest name and current settings from the SCD2 snapshot.
+    columns:
+      - name: campaign_key
+        data_tests: [unique, not_null]
+      - name: client_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_clients'), field: client_id}
+
+  - name: fct_ad_performance_daily
+    description: >
+      Campaign-day performance in USD across Meta, Google Ads and TikTok. Incremental with a
+      restatement lookback window, so late conversions reported by the platforms are picked up.
+    columns:
+      - name: ad_performance_key
+        data_tests: [unique, not_null]
+      - name: platform
+        data_tests:
+          - accepted_values:
+              arguments: {values: [meta, google_ads, tiktok]}
+      - name: spend_usd
+        data_tests: [not_null, not_negative]
+      - name: client_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_clients'), field: client_id}
+
+  - name: fct_orders
+    description: One row per Shopify order with last-click UTM attribution.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: platform
+        data_tests:
+          - accepted_values:
+              arguments: {values: [meta, google_ads, tiktok, unattributed]}
+
+  - name: mart_channel_performance_daily
+    description: >
+      Client x platform x day. Spend, platform-reported conversions and store-attributed orders
+      side by side. Source of the semantic layer and of the client dashboards.
+    columns:
+      - name: channel_day_key
+        data_tests: [unique, not_null]
+      - name: roas_attributed
+        description: Store-attributed revenue / spend. Null when there is no spend.
+      - name: roas_platform_reported
+        description: Platform-reported conversion value / spend. Usually higher than roas_attributed.
+      - name: conversion_overreport_rate
+        description: (platform conversions - attributed orders) / attributed orders.
+
+  - name: metricflow_time_spine
+    description: Daily calendar for the semantic layer.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day

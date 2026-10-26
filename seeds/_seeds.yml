@@ -1,0 +1,23 @@
+version: 2
+seeds:
+  - name: clients
+    description: One row per agency client, with the account ids it uses on each ad platform and in Shopify.
+    config:
+      column_types: {meta_account_id: varchar, google_customer_id: varchar, tiktok_advertiser_id: varchar}
+    columns:
+      - name: client_id
+        data_tests: [unique, not_null]
+  - name: utm_source_mapping
+    description: Maps the messy utm_source values clients use (fb, IG, adwords...) to a platform.
+    columns:
+      - name: utm_source_normalized
+        data_tests: [unique, not_null]
+      - name: platform
+        data_tests:
+          - accepted_values:
+              arguments: {values: [meta, google_ads, tiktok]}
+  - name: fx_rates
+    description: Fixed conversion rates to USD (simplified; a real project would load daily rates).
+    columns:
+      - name: currency
+        data_tests: [unique, not_null]
